@@ -65,7 +65,7 @@ Nhấn `Ctrl+C` trong terminal để tắt app.
 
 ## 4. Cách chạy với DỮ LIỆU THẬT (cần API key OpenAQ)
 
-1. Đăng ký key miễn phí tại <https://explore.openaq.org/> (Create account → API key).
+1. Đăng ký key miễn phí tại [https://explore.openaq.org/](https://explore.openaq.org/) (Create account → API key).
 2. Copy file mẫu rồi điền key:
 
    ```bash
@@ -87,44 +87,10 @@ Nhấn `Ctrl+C` trong terminal để tắt app.
 
 ## 5. Mô tả từng bước pipeline
 
-| Bước | File | Vào → Ra | Việc làm |
-|------|------|-----------|----------|
-| 2. Thu thập | `src/collect.py` | API → `data/raw/*.csv` | Tìm sensor OpenAQ quanh mỗi thành phố, tải AQI giờ + thời tiết Open-Meteo |
-| 3. Làm sạch | `src/clean.py` | raw → `aqi_weather_clean.csv` | Bỏ giá trị âm/thiếu, loại outlier IQR, gộp trạm, nội suy lỗ ≤ 3 giờ, merge theo (city, giờ UTC) |
+| Bước          | File                | Vào → Ra                            | Việc làm                                                                                                                     |
+| --------------- | ------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| 2. Thu thập    | `src/collect.py`  | API → `data/raw/*.csv`             | Tìm sensor OpenAQ quanh mỗi thành phố, tải AQI giờ + thời tiết Open-Meteo                                              |
+| 3. Làm sạch   | `src/clean.py`    | raw → `aqi_weather_clean.csv`      | Bỏ giá trị âm/thiếu, loại outlier IQR, gộp trạm, nội suy lỗ ≤ 3 giờ, merge theo (city, giờ UTC)                   |
 | 4. Đặc trưng | `src/features.py` | clean → `aqi_weather_features.csv` | AQI từ PM2.5 (chuẩn US EPA 2024), nhóm gió/nhiệt/mưa-nắng, giờ địa phương, trung bình trượt 24h, Weather_Impact |
-| 5. Biểu đồ | `src/charts.py` | DataFrame → figure | 5 hàm: line 24h, bar top cities, scatter gió–AQI, heatmap giờ×thành phố, box mưa–nắng |
-| 6. Dashboard | `app.py` | features CSV → web | Sidebar lọc thành phố/thời tiết/ngày + 3 tab: Tổng quan, Phân tích AQI, Tác động thời tiết |
-
-## 6. Các lỗi đã sửa so với bản gốc
-
-1. **`app.py` chạy vỡ khi đứng khác thư mục** — đường dẫn CSV tương đối
-   (`"data/processed/..."`) đổi sang đường dẫn tuyệt đối dựng từ `src/config.py`
-   (`BASE_DIR`), kèm màn hình hướng dẫn tạo dữ liệu khi chưa có file.
-2. **`collect.py` crash nếu API trả rỗng / thiếu key** — thêm kiểm tra
-   `OPENAQ_API_KEY`, dùng `.get()` khi đọc JSON, bỏ qua sensor lỗi thay vì dừng
-   cả quá trình, báo lỗi rõ ràng khi không thu được dòng nào.
-3. **`collect.py` không chạy được bằng `python src/collect.py`** — thêm
-   `sys.path.insert` nên chạy được cả 2 cách (`python -m src.collect` và
-   `python src/collect.py`).
-4. **`clean.py`/`features.py` cùng lỗi import & đường dẫn** — sửa giống mục 1 và 3,
-   thêm kiểm tra file tồn tại với thông báo hướng dẫn bước tiếp theo.
-5. **`features.py` có hàm thừa `to_local` và `Weather_Impact = NaN`** — xóa hàm
-   chết; `Weather_Impact` được `fillna(0)` kèm cảnh báo thành phố thiếu nhóm gió.
-6. **`charts.py` heatmap cột giờ lộn xộn, box plot sai thứ tự** — sắp xếp cột
-   giờ 0→23, ép thứ tự Dry→Rainy; scatter tự lấy mẫu 5000 điểm cho nhẹ.
-7. **`app.py` crash khi bỏ chọn hết filter / KeyError bản đồ** — thêm kiểm tra
-   filter rỗng, dùng `CITIES.get()` và bỏ dòng thiếu tọa độ.
-8. **`requirements.txt` thiếu version tối thiểu, `.gitignore` thiếu data/processed`**
-   — ghim version, bổ sung `.env`, cả 2 thư mục data, `.venv/`.
-9. **Lộ API key trong `.env` và README trống** — key đã tách ra `.env.example`,
-   viết lại README này + thêm `scripts/make_demo_data.py` và notebook EDA.
-
-## 7. Sự cố thường gặp
-
-- `ModuleNotFoundError: No module named 'streamlit'` → chưa cài thư viện
-  hoặc quên bật `.venv`: chạy lại `pip install -r requirements.txt`.
-- `FileNotFoundError: ... openaq_hourly.csv` → chạy `python scripts/make_demo_data.py`
-  (demo) hoặc `python -m src.collect` (dữ liệu thật) trước.
-- `streamlit: command not found` → dùng `python -m streamlit run app.py`.
-- Cổng 8501 bị chiếm → chạy `streamlit run app.py --server.port 8502`.
-- Dashboard báo "Chưa có dữ liệu" → chạy đủ 3 lệnh ở mục 3 rồi refresh trình duyệt.
+| 5. Biểu đồ   | `src/charts.py`   | DataFrame → figure                   | 5 hàm: line 24h, bar top cities, scatter gió–AQI, heatmap giờ×thành phố, box mưa–nắng                                |
+| 6. Dashboard    | `app.py`          | features CSV → web                   | Sidebar lọc thành phố/thời tiết/ngày + 3 tab: Tổng quan, Phân tích AQI, Tác động thời tiết                       |
